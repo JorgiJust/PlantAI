@@ -4,5 +4,6 @@ export type PlantRecord = {
   condition: string;
   confidence: number;
   treatment: string;
+  rating?: number;
   createdAt: string;
 };
