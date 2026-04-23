@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Plant Doctor MVP",
+    "slug": "plant-doctor-mvp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#F5EBD9"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F5EBD9"
+      }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite seleccionar fotos de tus plantas para diagnóstico.",
+          "cameraPermission": "Permite tomar fotos de tus plantas para diagnóstico."
+        }
+      ]
+    ]
+  }
+}
