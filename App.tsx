@@ -14,8 +14,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import { getMockDiagnosis } from "./src/services/diagnosis";
-import { loadRecords, saveRecords } from "./src/services/storage";
+import { loadRecords, loadTokenBalance, saveRecords, saveTokenBalance } from "./src/services/storage";
 import { PlantRecord } from "./src/types";
 
 const palette = {
@@ -48,8 +49,12 @@ export default function App() {
 
   useEffect(() => {
     void (async () => {
-      const currentRecords = await loadRecords();
+      const [currentRecords, currentTokenBalance] = await Promise.all([
+        loadRecords(),
+        loadTokenBalance(3)
+      ]);
       setRecords(currentRecords);
+      setTokenBalance(currentTokenBalance);
     })();
   }, []);
 
@@ -60,6 +65,20 @@ export default function App() {
       message,
       type
     });
+  };
+
+  const persistLocalImage = async (sourceUri: string) => {
+    const imagesDirectory = `${FileSystem.documentDirectory}plant-images/`;
+    const directoryInfo = await FileSystem.getInfoAsync(imagesDirectory);
+    if (!directoryInfo.exists) {
+      await FileSystem.makeDirectoryAsync(imagesDirectory, { intermediates: true });
+    }
+
+    const extensionMatch = sourceUri.match(/\.(jpg|jpeg|png|webp|heic)/i);
+    const extension = extensionMatch ? extensionMatch[0] : ".jpg";
+    const destination = `${imagesDirectory}${Date.now()}${extension}`;
+    await FileSystem.copyAsync({ from: sourceUri, to: destination });
+    return destination;
   };
 
   const requestPermission = async () => {
@@ -92,7 +111,8 @@ export default function App() {
     });
 
     if (!result.canceled && result.assets[0]?.uri) {
-      setSelectedImageUri(result.assets[0].uri);
+      const localUri = await persistLocalImage(result.assets[0].uri);
+      setSelectedImageUri(localUri);
     }
   };
 
@@ -107,7 +127,8 @@ export default function App() {
     });
 
     if (!result.canceled && result.assets[0]?.uri) {
-      setSelectedImageUri(result.assets[0].uri);
+      const localUri = await persistLocalImage(result.assets[0].uri);
+      setSelectedImageUri(localUri);
     }
   };
 
@@ -159,8 +180,10 @@ export default function App() {
     { id: "pro", tokens: 40, price: "$9.99" }
   ];
 
-  const handleBuyTokens = (amount: number, price: string) => {
-    setTokenBalance((prev) => prev + amount);
+  const handleBuyTokens = async (amount: number, price: string) => {
+    const updatedBalance = tokenBalance + amount;
+    setTokenBalance(updatedBalance);
+    await saveTokenBalance(updatedBalance);
     showPopup("Compra realizada", `Compraste ${amount} tokens por ${price}.`, "success");
   };
 
@@ -283,7 +306,7 @@ export default function App() {
                   </View>
                   <TouchableOpacity
                     style={styles.buyButton}
-                    onPress={() => handleBuyTokens(pack.tokens, pack.price)}
+                    onPress={() => void handleBuyTokens(pack.tokens, pack.price)}
                   >
                     <Text style={styles.buyButtonText}>Comprar</Text>
                   </TouchableOpacity>
